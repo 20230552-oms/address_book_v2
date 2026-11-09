@@ -12,14 +12,10 @@ def app(tmp_path):
     tmp_path: pytest가 테스트마다 만들어 주는 임시 폴더.
     실제 instance/addressbook.db 는 건드리지 않는다.
     """
-    app = create_app({
+    return create_app({
         "TESTING": True,
         "DATABASE": str(tmp_path / "test.db"),
     })
-    # 임시 DB에 contacts 테이블을 만든다
-    with app.app_context():
-        db.init_db()
-    return app
 
 
 @pytest.fixture

@@ -2,6 +2,7 @@
 import pytest
 
 import db
+from app import create_app
 
 
 def add_contact(client, **fields):
@@ -140,3 +141,23 @@ def test_search_sql_injection(client, count_contacts):
     assert "검색 결과가 없습니다" in page
     # 데이터도 그대로 남아 있어야 한다
     assert count_contacts() == 2
+
+
+# 8. init-db 명령 없이도 앱이 동작함
+def test_index_without_init_db(tmp_path):
+    """init-db를 실행하지 않은 새 DB 파일로도 목록 화면이 열린다."""
+    app = create_app({"TESTING": True, "DATABASE": str(tmp_path / "new.db")})
+    response = app.test_client().get("/")
+    assert response.status_code == 200
+    assert "아직 등록된 연락처가 없습니다" in response.text
+
+
+def test_data_kept_after_app_restart(tmp_path):
+    """앱을 다시 만들어도(서버를 껐다 켠 상황) 저장한 연락처가 남아 있다."""
+    config = {"TESTING": True, "DATABASE": str(tmp_path / "restart.db")}
+    add_contact(create_app(config).test_client(), name="홍길동", phone="010-1234-5678")
+
+    # 같은 DB 파일로 앱을 새로 만든다. 테이블을 다시 만들면서 데이터가 지워지면 안 된다
+    page = create_app(config).test_client().get("/").text
+    assert "홍길동" in page
+    assert "010-1234-5678" in page

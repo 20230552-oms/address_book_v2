@@ -27,6 +27,10 @@ def create_app(test_config=None):
     # DB 연결 정리와 init-db 명령을 앱에 등록한다
     db.init_app(app)
 
+    # 앱이 켜질 때 테이블이 없으면 만든다 (IF NOT EXISTS라서 기존 데이터는 그대로 남는다)
+    with app.app_context():
+        db.init_db()
+
     @app.route("/")
     def index():
         # 목록 화면: 이름순으로 보여 준다. 주소에 ?q=검색어 가 있으면 검색 결과만 보여 준다
