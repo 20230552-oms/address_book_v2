@@ -315,3 +315,66 @@ flask --app app run --debug --port 5001
 
 
 ## 실습 기록 (6번째 과제)
+
+9주차 주소록 프로젝트(5번째 과제, [address_book](https://github.com/20230552-oms/address_book))를 복사해서, 10주차 교안에서 짚은 9주차 실습의 문제점이 이 프로젝트에도 있는지 Claude로 먼저 확인했습니다. 그다음 단계별 프롬프트로 고치고, 단계마다 VS Code 화면을 캡처했습니다.
+
+- Claude Code는 PowerShell에서 `claude -p`(대화 없이 한 번 실행)로 단계마다 실행했습니다. 단계마다 프롬프트와 Claude의 응답 전체를 [`claude_log/`](claude_log) 폴더에 저장했습니다.
+- 코드가 바뀐 단계는 VS Code의 소스 제어(Source Control) diff 화면으로 확인했습니다.
+- 단계마다 커밋해서, 커밋 기록만 봐도 1~4단계 진행 과정이 보이게 했습니다.
+
+| 단계 | 모드 | 내용 | 결과 |
+|---|---|---|---|
+| 1 | plan (수정 없음) | 문제점 파악 | 4가지 지적 중 1번(init-db 의존)과 2번(서버 실행 규칙 없음)이 그대로 해당 |
+| 2 | acceptEdits | DB 테이블 자동 생성, 테스트 먼저 | 16 failed → 17 passed |
+| 3 | acceptEdits | CLAUDE.md·README.md 정비 | 서버는 학생이 직접 실행, PowerShell 기준, 단계별 성공 확인·막혔을 때 |
+| 4 | 점검 | pytest와 init-db 없이 첫 화면 확인 | 17 passed, 상태 코드 200 |
+
+### 1단계. 문제점 파악 (Plan 모드, 코드 수정 없음)
+10주차 교안에서 지적한 4가지 문제를 그대로 프롬프트에 넣고, 코드는 고치지 말고 파일명과 줄 번호를 근거로 해당 여부만 정리하게 했습니다.
+
+![1단계 프롬프트](screenshots/step01_1.jpg)
+
+Claude는 1번(init-db를 빠뜨리면 `no such table`)이 가장 중요하다고 판단했습니다. 테이블을 만드는 코드가 `flask --app app init-db` 명령에만 있고, `conftest.py`가 테스트마다 `init_db()`를 먼저 불러 줘서 이 문제를 테스트가 잡지 못하고 있었습니다. 3번(Mac 명령이 먼저)은 이미 Windows가 먼저 적혀 있어서 거의 해당하지 않는다고 했습니다. 지적을 그대로 받아들이지 않고 해당 여부를 구분해 준 점이 좋았습니다.
+
+![1단계 분석 결과](screenshots/step01_2.jpg)
+
+### 2단계. 앱 시작 시 DB 테이블 자동 생성 (테스트 먼저)
+테스트를 먼저 바꿔서 지금 코드가 실패하는 것을 보여 주고, 그다음 코드를 고치게 했습니다. `create_app()`에 3줄을 추가했고, 기존 `CREATE TABLE IF NOT EXISTS`를 그대로 써서 저장된 데이터는 지워지지 않습니다.
+
+![2단계 app.py diff](screenshots/step02_1.jpg)
+
+추가한 테스트는 2개입니다. 하나는 init-db 없이 새 DB로 첫 화면을 여는 테스트이고, 다른 하나는 앱을 다시 만들어도(서버를 껐다 켠 상황) 데이터가 남는지 확인하는 테스트입니다.
+
+![2단계 테스트 diff](screenshots/step02_2.jpg)
+
+`conftest.py`의 `init_db()`를 지우자 새 테스트뿐 아니라 기존 테스트 15개도 모두 `no such table`로 실패했습니다(16 failed). 9주차에는 테스트 준비 코드가 문제를 가리고 있었다는 뜻입니다. 고친 뒤에는 17 passed가 나왔습니다.
+
+![2단계 실패에서 통과로](screenshots/step02_3.jpg)
+
+### 3단계. CLAUDE.md·README.md 정비
+CLAUDE.md에 실행 환경 절을 새로 넣었습니다. 서버는 Claude가 실행하지 않고 학생이 터미널 ②에서 직접 켠다는 규칙과, 동작 확인은 pytest로 한다는 규칙을 적었습니다.
+
+![3단계 CLAUDE.md diff](screenshots/step03_1.jpg)
+
+README는 필수 단계에서 DB 초기화를 빼고, 단계마다 성공 확인과 막혔을 때를 넣었습니다. 5000번 포트가 이미 사용 중일 때 PowerShell에서 찾아 끄는 방법도 추가했습니다.
+
+![3단계 README](screenshots/step03_2.jpg)
+
+### 4단계. 최종 점검
+파일은 고치지 말고 확인만 하게 했습니다. pytest는 17개 모두 통과했습니다. DB 파일이 없는 상태에서 init-db 없이 `/`를 요청하자 200이 나왔고, 요청 뒤에는 `contacts` 테이블이 만들어져 있었습니다.
+
+![4단계 점검](screenshots/step04_1.jpg)
+
+처음 지적한 4가지 문제별로 해결 여부와 남은 한계를 표로 받았습니다.
+
+![4단계 문제별 해결 여부](screenshots/step04_2.jpg)
+
+### 5. 직접 서버 실행 (학생 역할)
+`instance/` 폴더가 없는 상태에서 직접 `python app.py`로 서버를 켜고 브라우저로 접속했습니다. init-db를 실행하지 않았는데도 첫 화면이 정상으로 나왔고, 서버 로그에도 `"GET / HTTP/1.1" 200`이 찍혔습니다.
+
+![5 첫 화면](screenshots/step05_1.jpg)
+
+### 남은 한계
+- 서버를 실행하지 않는다는 규칙은 CLAUDE.md와 프롬프트로만 막고 있습니다. Claude가 규칙을 놓치면 여전히 서버를 켤 수 있으므로, 대화형으로 쓸 때는 manual 모드의 승인 단계에서 한 번 더 확인해야 합니다.
+- `CREATE TABLE IF NOT EXISTS`는 이미 있는 테이블을 바꾸지 않습니다. 나중에 칸을 추가하면 기존 DB에는 반영되지 않습니다.
+- Claude가 PowerShell에서 pytest를 실행하려 할 때 권한 승인에서 막혀 Bash로 같은 가상환경의 Python을 실행했습니다(2·4단계 로그에 기록). 결과는 같지만, 교안대로 PowerShell 명령을 쓰려면 권한 설정을 따로 맞춰야 합니다.
