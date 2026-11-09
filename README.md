@@ -32,9 +32,9 @@ Python **Flask**와 **SQLite**로 만든 주소록 관리 웹 애플리케이션
 ## 폴더 구조
 
 ```
-address_book/
-├── app.py              # 앱 생성(create_app), 화면별 라우트, 입력 검증
-├── db.py               # DB 연결, 테이블 정의, init-db 명령, 등록·조회·수정·삭제·검색 함수
+address_book_v2/
+├── app.py              # 앱 생성(create_app, 시작할 때 DB 테이블 자동 생성), 화면별 라우트, 입력 검증
+├── db.py               # DB 연결, 테이블 정의, init-db 명령(선택), 등록·조회·수정·삭제·검색 함수
 ├── templates/
 │   ├── base.html       # 모든 화면의 공통 틀 (상단 바, 안내 메시지)
 │   ├── index.html      # 목록 + 검색
@@ -63,18 +63,38 @@ address_book/
 
 ---
 
+## 터미널 2개 사용하기
+
+VS Code에서 터미널을 2개 열어 역할을 나눕니다. (터미널 패널 오른쪽 위 `+` 버튼으로 새 터미널을 엽니다.)
+
+| 터미널 | 용도 |
+|---|---|
+| ① Claude용 | Claude Code 실행, 설치, `pytest -v` |
+| ② 서버용 | 개발 서버 켜기·끄기 (학생이 직접) |
+
+- 서버는 켜 두는 동안 터미널을 계속 차지하므로 ②에서만 실행합니다. Claude에게 서버 실행을 맡기지 않습니다.
+- 두 터미널 모두 가상환경을 켜야 합니다(아래 2단계).
+
 ## 설치 방법
 
-아래 명령은 모두 **프로젝트 폴더(`address_book`) 안에서** 실행합니다.
+아래 명령은 모두 **프로젝트 폴더(`address_book_v2`) 안에서** 실행합니다.
 
 ### 0. Python 설치 확인
 
-| Windows (PowerShell) | Mac (터미널) |
-|---|---|
-| `python --version` | `python3 --version` |
+**Windows (PowerShell)**
+```powershell
+python --version
+```
 
-`Python 3.10` 이상이 나오면 됩니다. 없으면 https://www.python.org/downloads/ 에서 설치하세요.
-Windows에서 설치할 때는 첫 화면의 **"Add python.exe to PATH"를 꼭 체크**하세요.
+**Mac (터미널)**
+```bash
+python3 --version
+```
+
+- **성공 확인**: `Python 3.10` 이상(예: `Python 3.13.1`)이 나옵니다.
+- **막혔을 때**
+  - `python을 찾을 수 없습니다` 또는 Microsoft Store가 열림 → https://www.python.org/downloads/ 에서 설치합니다. 첫 화면의 **"Add python.exe to PATH"를 꼭 체크**하고, 설치 후 터미널을 새로 엽니다.
+  - Mac에서 `command not found` → `python` 대신 `python3`을 씁니다.
 
 ### 1. 가상환경 만들기 (최초 1회)
 
@@ -82,17 +102,20 @@ Windows에서 설치할 때는 첫 화면의 **"Add python.exe to PATH"를 꼭 �
 
 **Windows (PowerShell)**
 ```powershell
-cd 경로\address_book
+cd 경로\address_book_v2
 python -m venv .venv
 ```
 
 **Mac (터미널)**
 ```bash
-cd 경로/address_book
+cd 경로/address_book_v2
 python3 -m venv .venv
 ```
 
-### 2. 가상환경 켜기 (터미널을 새로 열 때마다)
+- **성공 확인**: 아무 메시지 없이 끝나고, 프로젝트 폴더에 `.venv` 폴더가 생깁니다.
+- **막혔을 때**: `경로를 찾을 수 없습니다` → `cd` 뒤의 경로가 맞는지 확인합니다. 탐색기에서 폴더를 터미널로 끌어 놓으면 경로가 입력됩니다.
+
+### 2. 가상환경 켜기 (터미널을 새로 열 때마다, 터미널 ①·② 모두)
 
 **Windows (PowerShell)**
 ```powershell
@@ -104,36 +127,40 @@ python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-켜지면 프롬프트 앞에 `(.venv)`가 붙습니다.
-
-> **Windows에서 "이 시스템에서 스크립트를 실행할 수 없으므로…" 오류가 나면**
-> 아래 명령을 한 번 실행한 뒤 다시 켜 보세요.
-> ```powershell
-> Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
-> ```
+- **성공 확인**: 프롬프트 앞에 `(.venv)`가 붙습니다.
+- **막혔을 때**
+  - Windows에서 `이 시스템에서 스크립트를 실행할 수 없으므로…` → 아래 명령을 한 번 실행한 뒤 다시 켭니다.
+    ```powershell
+    Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+    ```
+  - `.venv\Scripts\Activate.ps1을 찾을 수 없음` → 1단계를 하지 않았거나 다른 폴더에 있습니다. 프로젝트 폴더로 `cd` 합니다.
 
 ### 3. 패키지 설치 (최초 1회)
 
-가상환경이 켜진 상태에서 실행합니다. Windows와 Mac 모두 같습니다.
+가상환경이 켜진 상태에서 실행합니다.
 
+**Windows (PowerShell)**
+```powershell
+pip install -r requirements.txt
+```
+
+**Mac (터미널)**
 ```bash
 pip install -r requirements.txt
 ```
 
+- **성공 확인**: 마지막에 `Successfully installed ... Flask-3.1... pytest-9...`가 나옵니다. (이미 설치돼 있으면 `Requirement already satisfied`만 나와도 정상입니다.)
+- **막혔을 때**
+  - `pip을 찾을 수 없음` → 가상환경이 꺼져 있습니다. 2단계를 다시 합니다.
+  - `Could not open requirements file` → 프로젝트 폴더가 아닌 곳에서 실행했습니다. `cd`로 이동합니다.
+
+> **DB는 따로 만들 필요가 없습니다.** 서버나 테스트가 시작될 때 `instance/addressbook.db`와 `contacts` 테이블이 없으면 자동으로 만들어집니다.
+
 ---
 
-## DB 초기화 (최초 1회)
+## 실행 방법 (터미널 ②)
 
-`instance/addressbook.db` 파일과 `contacts` 테이블을 만듭니다. Windows와 Mac 모두 같습니다.
-
-```bash
-flask --app app init-db
-```
-
-`데이터베이스를 초기화했습니다.`가 나오면 성공입니다.
-여러 번 실행해도 기존 데이터는 지워지지 않습니다.
-
-## 실행 방법
+서버는 **터미널 ②**에서 직접 켜고 끕니다.
 
 **Windows (PowerShell)**
 ```powershell
@@ -145,30 +172,86 @@ python app.py
 flask --app app run --debug --port 5001
 ```
 
-`Running on http://127.0.0.1:5000`(Mac은 `5001`)이 나오면 브라우저에서 그 주소로 접속합니다.
+- **성공 확인**: `Running on http://127.0.0.1:5000`(Mac은 `5001`)이 나옵니다. 브라우저에서 그 주소로 접속해 "아직 등록된 연락처가 없습니다"(또는 연락처 목록)가 보이면 성공입니다.
+- **서버 끄기**: 터미널 ②에서 `Ctrl+C`를 누릅니다.
+- **막혔을 때**
+  - 브라우저에 "사이트에 연결할 수 없음" → 서버가 꺼져 있습니다. 터미널 ②에서 실행 명령을 다시 입력합니다.
+  - `Address already in use` 또는 `포트를 사용할 수 없습니다` → 이미 5000번 포트를 다른 서버가 쓰고 있습니다. 아래 "5000번 포트가 이미 사용 중일 때"를 따라 합니다.
+  - CSS를 고쳤는데 화면이 그대로 → 강력 새로고침(Windows `Ctrl+F5`, Mac `Cmd+Shift+R`)을 합니다.
 
-- 서버가 켜져 있는 동안 **터미널 창을 닫지 마세요.** 닫거나 `Ctrl+C`를 누르면 서버가 꺼지고, 브라우저에 "사이트에 연결할 수 없음"이 뜹니다.
+참고
+- 서버가 켜져 있는 동안 **터미널 ②를 닫지 마세요.** 닫으면 서버가 꺼집니다.
 - debug 모드라서 코드를 고치고 저장하면 서버가 자동으로 다시 시작됩니다. 브라우저만 새로고침하면 됩니다.
-- CSS를 고쳤는데 화면이 그대로면 강력 새로고침(Windows `Ctrl+F5`, Mac `Cmd+Shift+R`)을 하세요.
+- Windows에서도 `flask --app app run --debug` 명령으로 실행할 수 있습니다. `python app.py`와 결과가 같습니다.
+
+### 5000번 포트가 이미 사용 중일 때
+
+먼저 다른 터미널(이전에 서버를 켠 터미널)에서 `Ctrl+C`로 끌 수 있는지 확인합니다. 터미널을 이미 닫아서 끌 수 없으면 아래처럼 찾아서 끕니다.
+
+**Windows (PowerShell)**
+```powershell
+# 1) 5000번 포트를 쓰는 프로그램 찾기 (Id가 프로세스 번호)
+Get-Process -Id (Get-NetTCPConnection -LocalPort 5000 -State Listen).OwningProcess
+
+# 2) 찾은 프로그램 끄기 (python이 맞는지 확인한 뒤, 1234 자리에 위에서 본 Id를 넣는다)
+Stop-Process -Id 1234
+```
+
+**Mac (터미널)**
+```bash
+lsof -i :5001          # PID 칸이 프로세스 번호
+kill 1234              # 1234 자리에 위에서 본 PID를 넣는다
+```
+
+- **성공 확인**: 1)을 다시 실행했을 때 아무것도 나오지 않으면(또는 "찾을 수 없습니다" 오류) 포트가 비었습니다. 이제 서버를 다시 켭니다.
+- **막혔을 때**: 1)에서 `python`이 아닌 다른 프로그램이 나오면 끄지 말고, 그 대신 다른 포트로 실행합니다.
+  ```powershell
+  flask --app app run --debug --port 5001
+  ```
 
 > **Mac 5000번 포트 주의**
 > macOS 12(Monterey) 이후에는 **AirPlay 수신 모드**가 5000번 포트를 사용합니다.
-> 그래서 `python app.py`(5000번)로 실행하면 "Address already in use" 오류가 나거나 브라우저에 403 오류가 뜰 수 있습니다.
+> 그래서 5000번으로 실행하면 "Address already in use" 오류가 나거나 브라우저에 403 오류가 뜰 수 있습니다.
 > 위처럼 `--port 5001`로 실행하거나, `시스템 설정 → 일반 → AirDrop 및 Handoff → AirPlay 수신 모드`를 끄세요.
 
-Windows에서도 `flask --app app run --debug` 명령으로 실행할 수 있습니다. `python app.py`와 결과가 같습니다.
+### (선택) DB 테이블만 미리 만들기
 
-## 테스트 방법
+테이블은 서버·테스트가 시작될 때 자동으로 만들어지므로 **보통은 실행하지 않아도 됩니다.** 서버를 켜지 않고 DB 파일만 먼저 만들어 확인하고 싶을 때 씁니다.
 
-가상환경이 켜진 상태에서 실행합니다. Windows와 Mac 모두 같습니다.
+**Windows (PowerShell)**
+```powershell
+flask --app app init-db
+```
 
+**Mac (터미널)**
+```bash
+flask --app app init-db
+```
+
+- **성공 확인**: `데이터베이스를 초기화했습니다.`가 나옵니다. 여러 번 실행해도 기존 데이터는 지워지지 않습니다.
+- **막혔을 때**: `No such command 'init-db'` → 프로젝트 폴더가 아닌 곳에서 실행했거나 `--app app`을 빠뜨렸습니다.
+
+## 테스트 방법 (터미널 ①)
+
+가상환경이 켜진 상태에서 실행합니다.
+
+**Windows (PowerShell)**
+```powershell
+pytest -v
+```
+
+**Mac (터미널)**
 ```bash
 pytest -v
 ```
 
-마지막 줄에 `15 passed`가 나오면 모두 통과한 것입니다.
+- **성공 확인**: 테스트마다 `PASSED`가 붙고, 마지막 줄에 `17 passed`가 나옵니다.
+- **막혔을 때**
+  - `pytest을 찾을 수 없음` → 가상환경이 꺼져 있거나 3단계를 하지 않았습니다.
+  - `ModuleNotFoundError: No module named 'app'` → 프로젝트 폴더가 아닌 곳에서 실행했습니다. `cd`로 이동합니다.
+  - `FAILED`가 있음 → 맨 아래 `short test summary info`에서 실패한 테스트 이름과 이유를 확인합니다.
 
-테스트는 매번 **임시 DB**를 새로 만들어 사용합니다. 실제 `instance/addressbook.db`의 데이터는 바뀌지 않습니다.
+테스트는 매번 **임시 DB**를 새로 만들어 사용합니다. 서버가 켜져 있어도 상관없고, 실제 `instance/addressbook.db`의 데이터는 바뀌지 않습니다.
 
 | 테스트 | 확인 내용 |
 |---|---|
@@ -177,30 +260,39 @@ pytest -v
 | 수정 | 수정하면 화면과 DB 값이 바뀜 |
 | 삭제 | 삭제하면 목록에서 사라짐, GET 요청으로는 삭제되지 않음 |
 | 검색 | 이름 검색, 결과 없음 안내 |
-| 입력 검증 | 이름이 비었거나 전화번호 형식이 틀리면 저장되지 않음 (등록·수정 모두) |
+| 입력 검증 | 이름이 비었거나 전화번호 형식이 틀리면 저장되지 않음 (등록 6가지 경우·수정) |
 | 보안 | 검색어 `' OR '1'='1`(SQL 인젝션 시도)로 모든 데이터가 나오지 않음 |
+| DB 자동 생성 | init-db 없이 새 DB로 목록이 열림, 앱을 다시 켜도 저장한 데이터가 남음 |
 
 ## 처음부터 순서대로 (요약)
 
 **Windows (PowerShell)**
 ```powershell
-cd 경로\address_book
+# 터미널 ①
+cd 경로\address_book_v2
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-flask --app app init-db
 pytest -v
+
+# 터미널 ②
+cd 경로\address_book_v2
+.\.venv\Scripts\Activate.ps1
 python app.py
 ```
 
 **Mac (터미널)**
 ```bash
-cd 경로/address_book
+# 터미널 ①
+cd 경로/address_book_v2
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-flask --app app init-db
 pytest -v
+
+# 터미널 ②
+cd 경로/address_book_v2
+source .venv/bin/activate
 flask --app app run --debug --port 5001
 ```
 
@@ -210,9 +302,9 @@ flask --app app run --debug --port 5001
 |---|---|
 | `python`(또는 `pip`, `flask`)을 찾을 수 없음 | Python이 설치되지 않았거나 PATH에 없습니다. Mac은 `python3`을 쓰세요. `flask`, `pytest`가 없다고 나오면 가상환경이 켜져 있는지 확인하세요. |
 | `ModuleNotFoundError: No module named 'flask'` | 가상환경을 켜지 않았거나 패키지를 설치하지 않았습니다. 2·3단계를 다시 하세요. |
-| `no such table: contacts` | DB 초기화를 하지 않았습니다. `flask --app app init-db`를 실행하세요. |
-| 브라우저에 "사이트에 연결할 수 없음" | 서버가 꺼져 있습니다. 터미널에서 실행 명령을 다시 입력하세요. |
-| `Address already in use` | 이미 같은 포트에서 서버가 실행 중입니다. 기존 터미널에서 `Ctrl+C`로 끄거나, `--port 5001`처럼 다른 포트를 쓰세요. |
+| `no such table: contacts` | 테이블은 서버가 켜질 때 자동으로 만들어집니다. 터미널 ②에서 `Ctrl+C`로 서버를 끄고 다시 켜세요. |
+| 브라우저에 "사이트에 연결할 수 없음" | 서버가 꺼져 있습니다. 터미널 ②에서 실행 명령을 다시 입력하세요. |
+| `Address already in use` | 이미 같은 포트에서 서버가 실행 중입니다. "5000번 포트가 이미 사용 중일 때"를 따라 끄거나, `--port 5001`처럼 다른 포트를 쓰세요. |
 
 ## 참고: 배포할 때 주의
 
@@ -222,61 +314,4 @@ flask --app app run --debug --port 5001
 - CSRF 보호를 추가합니다. 지금은 다른 사이트에서 삭제 요청을 보낼 수 있습니다.
 
 
-## 실습 기록 (9주차 Claude 코딩 반복연습)
-
-VS Code + Claude Code로 0단계부터 10단계까지 진행하면서 단계마다 중요하다고 생각한 화면을 캡처했습니다.
-
-### 0단계. 빈 프로젝트 폴더 연결 확인
-Claude에게 열려 있는 폴더를 물어 address_book 폴더가 비어 있다는 답을 받았습니다.
-
-![0단계](screenshots/step00.png)
-
-### 1단계. 요구사항 정리와 계획 (Plan 모드)
-Plan 모드에서 계획만 받았습니다. 계획 문서가 나왔지만 탐색기는 여전히 비어 있습니다.
-
-![1단계](screenshots/step01.png)
-
-### 2단계. 프로젝트 골격 만들기
-templates, static, tests 폴더를 만드는 PowerShell 명령을 실행하기 전에 승인을 요청받은 장면입니다.
-
-![2단계](screenshots/step02.png)
-
-### 3단계. 첫 실행 (Flask)
-app.py를 쓰기 전 승인 화면입니다. 오른쪽 diff에서 `create_app().run(debug=True)` 부분을 확인했습니다.
-
-![3단계](screenshots/step03.png)
-
-### 4단계. SQLite 테이블 만들기
-`flask --app app init-db`로 DB를 초기화했고, instance/addressbook.db에 7개 칸이 만들어진 것을 확인했습니다.
-
-![4단계](screenshots/step04.png)
-
-### 5단계. 등록과 목록 보기
-가짜 연락처 3명(홍길동, 김해사, 이바다)을 등록하고 필수 항목 누락, 정렬, flash 메시지를 확인했습니다.
-
-![5단계](screenshots/step05.png)
-
-### 6단계. 수정과 삭제
-수정·삭제 버튼, 없는 id 접근 시 404, GET으로 삭제 주소 접근 시 405가 나오는 것을 확인했습니다.
-
-![6단계](screenshots/step06.png)
-
-### 7단계. 검색, 입력 검증, 보안 점검
-코드를 고치지 않고 보안 점검만 요청했습니다. SQL이 모두 `?` 파라미터 바인딩을 쓰는 위치를 줄 번호로 짚어 줬습니다.
-
-![7단계](screenshots/step07.png)
-
-### 8단계. 화면 디자인 (CSS)
-style.css를 적용한 뒤 브라우저에서 확인한 목록 화면입니다(검색창, 수정·삭제 버튼).
-
-![8단계](screenshots/step08.png)
-
-### 9단계. pytest 테스트
-conftest.py에서 임시 폴더의 test.db를 쓰도록 해서 실제 DB를 건드리지 않고 테스트를 구성했습니다.
-
-![9단계](screenshots/step09.png)
-
-### 10단계. README와 CLAUDE.md 정리
-README.md를 새로 만들고 CLAUDE.md를 현재 구조에 맞게 갱신했습니다.
-
-![10단계](screenshots/step10.png)
+## 실습 기록 (6번째 과제)

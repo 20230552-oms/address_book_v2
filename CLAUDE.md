@@ -11,9 +11,9 @@ Python Flask와 SQLite로 만든 주소록 관리 웹앱이다. 별도 DB 서버
 
 ## 폴더 구조
 ```
-address_book/
-├── app.py              # 앱 팩토리 create_app(), 라우트, read_form()·validate() 입력 검증
-├── db.py               # DB 연결(get_db), 테이블 정의(SCHEMA), init-db 명령, CRUD·검색 함수
+address_book_v2/
+├── app.py              # 앱 팩토리 create_app()(시작 시 테이블 자동 생성), 라우트, read_form()·validate() 입력 검증
+├── db.py               # DB 연결(get_db), 테이블 정의(SCHEMA), init-db 명령(선택), CRUD·검색 함수
 ├── templates/          # base.html(공통 틀), index.html(목록+검색), form.html(등록·수정 공용), 404.html
 ├── static/             # style.css (색은 맨 위 :root 변수에 모아 둠, 600px 이하 반응형)
 ├── tests/              # conftest.py(임시 DB fixture: app, client, count_contacts), test_app.py
@@ -33,29 +33,28 @@ address_book/
 | `/delete/<int:contact_id>` | POST | `delete` | (목록으로 리다이렉트) |
 | 404 | - | `not_found` | 404.html |
 
-## 실행 명령
-Windows (PowerShell)
-```powershell
-.\.venv\Scripts\Activate.ps1           # 가상환경 활성화
-pip install -r requirements.txt        # 패키지 설치
-flask --app app init-db                # DB 초기화 (최초 1회, 다시 실행해도 데이터 유지)
-python app.py                          # 개발 서버 실행 (debug) → http://127.0.0.1:5000
-```
+## 실행 환경
+- 실행 환경은 Windows PowerShell이다. 명령은 PowerShell 기준으로 쓰고, Mac 명령이 다르면 괄호로 덧붙인다.
+- 터미널은 2개를 쓴다. ① Claude용(Claude Code 실행, pytest), ② 서버용(학생이 직접 서버를 켜고 끔).
+- **Claude는 개발 서버(`python app.py`, `flask run`)를 실행하지 않는다.** 서버는 학생이 터미널 ②에서 직접 켜고 끈다. 동작 확인은 `pytest`로 한다.
+- DB 테이블은 앱이 켜질 때(`create_app()`) 자동으로 만들어진다. `flask --app app init-db`는 필요할 때만 쓰는 선택 명령이다.
 
-Mac (터미널)
-```bash
-source .venv/bin/activate
-pip install -r requirements.txt
-flask --app app init-db
-flask --app app run --debug --port 5001   # 5000번은 macOS AirPlay 수신 모드와 충돌
+## 실행 명령
+```powershell
+.\.venv\Scripts\Activate.ps1           # 가상환경 활성화 (Mac: source .venv/bin/activate)
+pip install -r requirements.txt        # 패키지 설치
+python app.py                          # 개발 서버 실행 (debug) → http://127.0.0.1:5000 — 학생이 터미널 ②에서만 실행
+                                       # (Mac: flask --app app run --debug --port 5001, 5000번은 AirPlay 수신 모드와 충돌)
+flask --app app init-db                # (선택) 테이블만 미리 만들기. 다시 실행해도 데이터 유지
 ```
 
 ## 테스트 명령
-```bash
+```powershell
 pytest -v
 ```
 - 테스트는 `tmp_path`의 임시 DB를 쓴다. 실제 `instance/addressbook.db`를 쓰는 테스트는 만들지 않는다.
 - 기능을 추가하거나 바꾸면 tests/test_app.py에 테스트를 추가하고 `pytest -v`가 모두 통과해야 한다.
+- 작업을 마치면 `pytest -v` 결과(통과·실패 개수, 실패한 테스트 이름)를 보고한다.
 
 ## 코딩 규칙
 - 주석은 한글로 작성한다.
